@@ -4,7 +4,6 @@
 #define MPU6050_ADDRESS		0xD0
 
 int8_t MPU6050_Data[14] = {0};
-int flag = 0;
 
 void MyDMA_Transfer(void)
 {
@@ -49,8 +48,6 @@ void MPU6050_WriteReg(uint8_t RegAddress, uint8_t Data)
 
 void MPU6050_ReadReg(uint8_t RegAddress)
 {
-//	uint8_t Data;
-	
 	I2C_GenerateSTART(I2C2, ENABLE);
 	MPU6050_WaitEvent(I2C2, I2C_EVENT_MASTER_MODE_SELECT);
 	
@@ -65,31 +62,18 @@ void MPU6050_ReadReg(uint8_t RegAddress)
 
 	I2C_Send7bitAddress(I2C2, MPU6050_ADDRESS, I2C_Direction_Receiver);
 	MPU6050_WaitEvent(I2C2, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED);
-	
-	if(flag != 0)MyDMA_Transfer();
 
-	for(int8_t count=0; count<14; count++){	 
+	for(int8_t count = 0; count < 14; count++){	 
 		 if(count != 14 - 1)
 		 {			 
-			 MPU6050_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_RECEIVED);//EV_7 				
+			 MPU6050_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_RECEIVED);				
 		 }
 		 else{
 					I2C_AcknowledgeConfig(I2C2, DISABLE);
 					I2C_GenerateSTOP(I2C2, ENABLE);					
-					MPU6050_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_RECEIVED);//EV_7		
+					MPU6050_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_RECEIVED);	
 			}							
 	}
-	flag ++;
-
-//	I2C_AcknowledgeConfig(I2C2, DISABLE);
-//	I2C_GenerateSTOP(I2C2, ENABLE);
-//	
-//	MPU6050_WaitEvent(I2C2, I2C_EVENT_MASTER_BYTE_RECEIVED);
-//	Data = I2C_ReceiveData(I2C2);
-//	
-//	I2C_AcknowledgeConfig(I2C2, ENABLE);
-
-//	return Data;
 }
 
 void MPU6050_Init(void)
@@ -132,18 +116,6 @@ void MPU6050_Init(void)
     DMA_Cmd(DMA1_Channel5, ENABLE);
 	I2C_DMACmd(I2C2, ENABLE);	
 	I2C_Cmd(I2C2, ENABLE);
-
-//  DMA_ITConfig(DMA1_Channel5, DMA_IT_TC, ENABLE);
-//		
-//	NVIC_InitTypeDef NVIC_InitStructure;
-
-//  NVIC_InitStructure.NVIC_IRQChannel = DMA1_Channel5_IRQn;
-//  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-//  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-//  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-//  NVIC_Init(&NVIC_InitStructure);
-
-	I2C_GenerateSTART(I2C2, ENABLE);
 	
 	MPU6050_WriteReg(MPU6050_PWR_MGMT_1, 0x01);
 	MPU6050_WriteReg(MPU6050_PWR_MGMT_2, 0x00);
@@ -153,19 +125,14 @@ void MPU6050_Init(void)
 	MPU6050_WriteReg(MPU6050_ACCEL_CONFIG, 0x18);
 }
 
-//void DMA1_Channel5_IRQHandler(void){
-//    if(DMA_GetITStatus(DMA1_IT_TC5)){
-//					
-//		}
-//		DMA_ClearITPendingBit(DMA1_IT_TC5);
-//}
-
 void MPU6050_GetData(int16_t *AccX, int16_t *AccY, int16_t *AccZ, 
 						int16_t *GyroX, int16_t *GyroY, int16_t *GyroZ)
 {
 	uint8_t DataH, DataL;
 	
 	MPU6050_ReadReg(MPU6050_ACCEL_XOUT_H);
+	MyDMA_Transfer();
+	
 	DataH = MPU6050_Data[1];
 	DataL = MPU6050_Data[0];
 	*AccX = (DataH << 8) | DataL;
@@ -189,40 +156,4 @@ void MPU6050_GetData(int16_t *AccX, int16_t *AccY, int16_t *AccZ,
 	DataH = MPU6050_Data[13];
 	DataL = MPU6050_Data[12];
 	*GyroZ = (DataH << 8) | DataL;
-	
-//	MPU6050_ReadReg(MPU6050_ACCEL_XOUT_H);
-//	DataH = MPU6050_Data[0];
-//	MPU6050_ReadReg(MPU6050_ACCEL_XOUT_L);
-//	DataL = MPU6050_Data[0];
-//	*AccX = (DataH << 8) | DataL;
-//	
-//	MPU6050_ReadReg(MPU6050_ACCEL_YOUT_H);
-//	DataH = MPU6050_Data[0];
-//	MPU6050_ReadReg(MPU6050_ACCEL_YOUT_L);
-//	DataL = MPU6050_Data[0];
-//	*AccY = (DataH << 8) | DataL;
-//	
-//	MPU6050_ReadReg(MPU6050_ACCEL_ZOUT_H);
-//	DataH = MPU6050_Data[0];
-//	MPU6050_ReadReg(MPU6050_ACCEL_ZOUT_L);
-//	DataL = MPU6050_Data[0];
-//	*AccZ = (DataH << 8) | DataL;
-//	
-//	MPU6050_ReadReg(MPU6050_GYRO_XOUT_H);
-//	DataH = MPU6050_Data[0];
-//	MPU6050_ReadReg(MPU6050_GYRO_XOUT_L);
-//	DataL = MPU6050_Data[0];
-//	*GyroX = (DataH << 8) | DataL;
-//	
-//	MPU6050_ReadReg(MPU6050_GYRO_YOUT_H);
-//	DataH = MPU6050_Data[0];
-//	MPU6050_ReadReg(MPU6050_GYRO_YOUT_L);
-//	DataL = MPU6050_Data[0];
-//	*GyroY = (DataH << 8) | DataL;
-//	
-//	MPU6050_ReadReg(MPU6050_GYRO_ZOUT_H);
-//	DataH = MPU6050_Data[0];
-//	MPU6050_ReadReg(MPU6050_GYRO_ZOUT_L);
-//	DataL = MPU6050_Data[0];
-//	*GyroZ = (DataH << 8) | DataL;
 }
